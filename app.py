@@ -577,11 +577,15 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
     with col1:
         if st.button("⬅ Voltar para lista", help="Voltar para a listagem de pacientes"):
             try:
-                # Limpa apenas o id se possível
-                try:
-                    del st.query_params["id"]
-                except KeyError:
-                    st.query_params.clear()
+                # Limpa todos os parâmetros da URL para garantir estado limpo
+                st.query_params.clear()
+                # Força limpeza completa do cache da sessão
+                for key in list(st.session_state.keys()):
+                    if 'cache' in key.lower() or 'paciente' in key.lower() or 'prontuario' in key.lower():
+                        del st.session_state[key]
+                # Força limpeza do cache do Streamlit
+                st.cache_data.clear()
+                st.cache_resource.clear()
             except Exception:
                 pass
             st.rerun()
@@ -658,10 +662,23 @@ def render_cards(pacientes: List[Dict[str, Any]]):
 # ---------------------------
 # UI
 # ---------------------------
-st.title("Pacientes Carolina Adorno")
+st.title("Pacientes Dra. Carolina Adorno")
 
 # Verifica se há um paciente selecionado via ?id=
 selected_id = get_selected_paciente_id()
+
+# Limpa cache quando não há paciente selecionado para evitar dados residuais
+if not selected_id:
+    # Limpa qualquer cache residual da sessão
+    for key in list(st.session_state.keys()):
+        if 'cache' in key.lower() or 'paciente' in key.lower() or 'prontuario' in key.lower():
+            del st.session_state[key]
+    # Limpa cache do Streamlit para garantir estado limpo
+    try:
+        st.cache_data.clear()
+        st.cache_resource.clear()
+    except Exception:
+        pass
 
 if selected_id:
     try:
@@ -681,6 +698,12 @@ if selected_id:
     else:
         st.warning("Paciente não encontrado.")
 else:
+    # Limpa cache da sessão quando não há paciente selecionado
+    if 'paciente_cache' in st.session_state:
+        del st.session_state['paciente_cache']
+    if 'prontuarios_cache' in st.session_state:
+        del st.session_state['prontuarios_cache']
+    
     # Barra de busca (envia direto para a API no parâmetro ?nome=)
     q = st.text_input("Pesquisar por nome", placeholder="Digite o nome do paciente... (ex.: Maria)")
 
