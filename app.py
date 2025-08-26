@@ -24,16 +24,175 @@ API_URL = os.getenv("API_URL", "").rstrip("/")  # ex: https://sua.api
 CARD_CSS = """
 <style>
 :root {
-  --card-bg: #0e1117;
-  --card-border: #30363d;
-  --card-shadow: 0 6px 20px rgba(0,0,0,0.15);
-  --text-muted: #9ba3af;
+  --card-bg: #EAE3D2;
+  --card-border: #A18C7A;
+  --text-muted: #8B7B6A;
+  --brand: #B7A99A;
+  --page-bg: #D1C6B8;
+  --accent: #B7A99A;
+}
+
+/* Estilo geral da página */
+.main {
+  background-color: var(--page-bg);
+}
+
+/* Estilo para o título principal */
+h1 {
+  color: #8B7B6A !important;
+}
+
+/* Estilo para subheaders (incluindo "Prontuários") */
+h2, h3 {
+  color: #8B7B6A !important;
+}
+
+/* Estilo para os campos de input */
+.stTextInput > div > div > input {
+  background-color: #EAE3D2 !important;
+  border-color: #A18C7A !important;
+  color: #000000 !important;
+}
+
+/* Estilo para o label "Pesquisar por nome" */
+.stTextInput > div > div > label {
+  color: #000000 !important;
+}
+
+/* Estilo para o texto "X resultado(s) para..." */
+p[data-testid="caption"] {
+  color: #000000 !important;
+}
+
+/* Estilos específicos para o caption dos resultados */
+.stCaption {
+  color: #000000 !important;
+}
+
+/* Estilo para qualquer elemento que contenha o texto de resultados */
+p, span, div {
+  color: inherit;
+}
+
+/* Estilo específico para o caption dos resultados */
+.stCaption {
+  color: #000000 !important;
+}
+
+/* Estilo para o texto digitado no input */
+.stTextInput input {
+  color: #000000 !important;
+}
+
+/* Estilo para o placeholder também */
+.stTextInput input::placeholder {
+  color: #666666 !important;
+}
+
+/* Estilos mais específicos para garantir que funcionem */
+div[data-testid="stTextInput"] label,
+div[data-testid="stTextInput"] input {
+  color: #000000 !important;
+}
+
+/* Estilo para o caption com máxima especificidade */
+div[data-testid="stCaption"] p,
+div[data-testid="stCaption"] span,
+p[data-testid="caption"],
+span[data-testid="caption"] {
+  color: #000000 !important;
+}
+
+/* Estilo para qualquer texto dentro do campo de input */
+input[type="text"],
+input[placeholder*="Digite o nome"] {
+  color: #000000 !important;
+}
+
+/* Estilos com máxima especificidade para o texto digitado */
+input[type="text"] {
+  color: #000000 !important;
+}
+
+/* Estilos para o texto dos resultados com máxima especificidade */
+div[data-testid="stCaption"] {
+  color: #000000 !important;
+}
+
+div[data-testid="stCaption"] * {
+  color: #000000 !important;
+}
+
+/* Estilo específico para o caption dos resultados */
+.stCaption {
+  color: #000000 !important;
+}
+
+/* Estilo para o texto digitado no input */
+.stTextInput input {
+  color: #000000 !important;
+}
+
+/* Estilo para o placeholder também */
+.stTextInput input::placeholder {
+  color: #666666 !important;
+}
+
+/* Estilo para botões */
+.stButton > button {
+  background-color: #EAE3D2 !important;
+  color: #8B7B6A !important;
+  border-color: #A18C7A !important;
+}
+
+.stButton > button:hover {
+  background-color: #D1C6B8 !important;
+  border-color: #8B7B6A !important;
+}
+
+/* Estilo mais específico para garantir que funcione */
+button[data-testid="baseButton-secondary"] {
+  background-color: #EAE3D2 !important;
+  color: #8B7B6A !important;
+  border-color: #A18C7A !important;
+}
+
+button[data-testid="baseButton-secondary"]:hover {
+  background-color: #D1C6B8 !important;
+  border-color: #8B7B6A !important;
+}
+
+/* Estilo com máxima especificidade para botões */
+div[data-testid="stButton"] button,
+div[data-testid="stButton"] button:hover,
+div[data-testid="stButton"] button:focus,
+div[data-testid="stButton"] button:active {
+  background-color: #EAE3D2 !important;
+  color: #8B7B6A !important;
+  border-color: #A18C7A !important;
+}
+
+div[data-testid="stButton"] button:hover {
+  background-color: #D1C6B8 !important;
+  border-color: #8B7B6A !important;
+}
+
+/* Estilo para botões de download também */
+.stDownloadButton > button {
+  background-color: #B7A99A !important;
+  color: #EAE3D2 !important;
+  border-color: #A18C7A !important;
+}
+
+.stDownloadButton > button:hover {
+  background-color: #A18C7A !important;
+  border-color: #8B7B6A !important;
 }
 
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  gap: 20px;
   margin-top: 12px;
 }
 
@@ -41,23 +200,33 @@ CARD_CSS = """
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: var(--card-shadow);
+  padding: 18px 20px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.08s ease-in-out, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
 }
 
 .card h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
+  margin: 0 0 10px 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: #8B7B6A;
 }
 
 .card .row {
-  margin: 6px 0;
-  font-size: 0.95rem;
+  margin: 8px 0;
+  font-size: 0.96rem;
+  color: #A18C7A;
 }
 
 .card .label {
   display: inline-block;
-  width: 92px;
+  width: 110px;
   color: var(--text-muted);
 }
 
@@ -66,6 +235,103 @@ CARD_CSS = """
 }
 
 .card a:hover { text-decoration: underline; }
+
+.card .overlay-link {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+.detail-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 22px;
+  margin-top: 8px;
+}
+
+.detail-card h2 {
+  color: #8B7B6A;
+  margin-bottom: 16px;
+}
+
+.detail-card .row {
+  margin: 10px 0;
+  font-size: 1rem;
+  color: #A18C7A;
+  line-height: 1.5;
+}
+
+.detail-card .label {
+  display: inline-block;
+  width: 120px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Estilos para a seção de prontuários */
+.prontuarios-section {
+  margin-top: 24px;
+}
+
+.prontuarios-section h3 {
+  color: #8B7B6A;
+  margin-bottom: 16px;
+}
+
+/* Estilos para o dataframe dos prontuários */
+.stDataFrame {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stDataFrame th {
+  background: #B7A99A;
+  color: #EAE3D2;
+  font-weight: 600;
+}
+
+.stDataFrame td {
+  color: #A18C7A;
+}
+
+/* Estilo com máxima especificidade para o caption dos resultados */
+div[data-testid="stCaption"],
+div[data-testid="stCaption"] p,
+div[data-testid="stCaption"] span,
+div[data-testid="stCaption"] div,
+div[data-testid="stCaptionContainer"],
+div[data-testid="stCaptionContainer"] p,
+div[data-testid="stCaptionContainer"] span,
+div[data-testid="stCaptionContainer"] div,
+p[data-testid="caption"],
+span[data-testid="caption"],
+.stCaption,
+.stCaption * {
+  color: #000000 !important;
+}
+
+/* Estilo para qualquer elemento que possa conter o texto de resultados */
+p, span, div {
+  color: inherit;
+}
+
+/* Estilo para alertas/info boxes (como "Nenhum prontuário encontrado") */
+.stAlert,
+.stAlert > div,
+.stAlert > div > div {
+  background-color: #EAE3D2 !important;
+  color: #8B7B6A !important;
+}
+
+.stAlert p,
+.stAlert span,
+.stAlert div {
+  color: #8B7B6A !important;
+}
+
 </style>
 """
 st.markdown(CARD_CSS, unsafe_allow_html=True)
@@ -81,7 +347,6 @@ def normalize(s: str) -> str:
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     return s.lower().strip()
 
-@st.cache_data(ttl=60)
 def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Busca pacientes na API: GET {API_URL}/pacientes?nome=<nome>
@@ -132,12 +397,15 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
         }
         return normalized, meta
 
-    except requests.HTTPError as e:
-        st.error(f"Erro HTTP ao buscar pacientes: {e}")
-    except requests.RequestException as e:
-        st.error(f"Erro de rede ao buscar pacientes: {e}")
+    except requests.HTTPError:
+        # Erro HTTP - não exibe erro na interface
+        pass
+    except requests.RequestException:
+        # Erro de rede - não exibe erro na interface
+        pass
     except ValueError:
-        st.error("Não foi possível decodificar o JSON retornado pela API.")
+        # Erro de JSON - não exibe erro na interface
+        pass
 
     return [], {"query": nome, "total": 0, "version": ""}
 
@@ -178,6 +446,123 @@ def create_excel_download(pacientes: List[Dict[str, Any]]) -> bytes:
     output.seek(0)
     return output.getvalue()
 
+def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> List[Dict[str, Any]]:
+    """Busca prontuários na API: GET {API_URL}/pacientes/prontuarios?id=<id>."""
+    if not paciente_id:
+        return []
+    if not api_base_url:
+        # Mock quando não há API
+        return [
+            {"id": 101, "data": "2024-05-02", "tipo": "Consulta", "descricao": "Acompanhamento clínico"},
+            {"id": 102, "data": "2024-06-15", "tipo": "Exame", "descricao": "Hemograma completo"},
+        ]
+    url = f"{api_base_url}/pacientes/prontuarios?id={quote(str(paciente_id))}"
+    try:
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, dict):
+            return data.get("items", [])
+        if isinstance(data, list):
+            return data
+    except requests.HTTPError:
+        # Erro HTTP (como 404) - não exibe erro na interface
+        pass
+    except requests.RequestException:
+        # Erro de rede - não exibe erro na interface
+        pass
+    except ValueError:
+        # Erro de JSON - não exibe erro na interface
+        pass
+    return []
+
+def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
+    """Busca um paciente específico em {API_URL}/pacientes/<id> (se existir)."""
+    if not paciente_id:
+        return {}
+    if not api_base_url:
+        return {
+            "id": int(paciente_id) if str(paciente_id).isdigit() else paciente_id,
+            "nome": "Paciente (mock)",
+            "endereco": "Rua Exemplo, 123",
+            "telefone": "(00) 00000-0000",
+            "email": "paciente@example.com",
+        }
+    url = f"{api_base_url}/pacientes/{quote(str(paciente_id))}"
+    try:
+        resp = requests.get(url, timeout=15)
+        if resp.status_code == 404:
+            return {}
+        resp.raise_for_status()
+        data = resp.json()
+        return {
+            "id": data.get("id"),
+            "nome": data.get("nome", ""),
+            "endereco": data.get("endereco", ""),
+            "telefone": data.get("telefone", ""),
+            "email": data.get("email", ""),
+        }
+    except Exception:
+        return {}
+
+def get_selected_paciente_id() -> Any:
+    """Obtém o parâmetro id da URL (compatível com APIs antiga e nova)."""
+    selected_id = None
+    try:
+        qp = st.query_params
+        id_value = qp.get("id")
+        if isinstance(id_value, list):
+            selected_id = id_value[0]
+        elif id_value is not None:
+            selected_id = id_value
+    except Exception:
+        pass
+    return selected_id
+
+
+def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, Any]]):
+    """Renderiza detalhe do paciente com prontuários abaixo, ocupando a página."""
+    col1, col2 = st.columns([1, 1], gap="large")
+    with col1:
+        if st.button("⬅ Voltar para lista", help="Voltar para a listagem de pacientes"):
+            try:
+                # Limpa apenas o id se possível
+                try:
+                    del st.query_params["id"]
+                except KeyError:
+                    st.query_params.clear()
+            except Exception:
+                pass
+            st.rerun()
+
+    st.markdown(
+        """
+<div class="detail-card">
+  <h2 style="margin-top:0;">Dados do Paciente</h2>
+  <div class="row"><span class="label">Nome:</span> {nome}</div>
+  <div class="row"><span class="label">Endereço:</span> {endereco}</div>
+  <div class="row"><span class="label">Telefone:</span> {telefone}</div>
+  <div class="row"><span class="label">E-mail:</span> {email}</div>
+</div>
+""".format(
+            nome=paciente.get("nome", ""),
+            endereco=paciente.get("endereco", ""),
+            telefone=paciente.get("telefone", ""),
+            email=paciente.get("email", ""),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.subheader("Prontuários")
+    if not prontuarios:
+        st.info("Nenhum prontuário encontrado para este paciente.")
+    else:
+        try:
+            df = pd.DataFrame(prontuarios)
+            st.dataframe(df, use_container_width=True)
+        except Exception:
+            st.json(prontuarios)
+
 def render_cards(pacientes: List[Dict[str, Any]]):
     """Renderiza cards dos pacientes em grid responsivo."""
     if not pacientes:
@@ -190,16 +575,15 @@ def render_cards(pacientes: List[Dict[str, Any]]):
         end = p.get("endereco", "")
         tel = p.get("telefone", "")
         email = p.get("email", "")
-        tel_href = "".join(ch for ch in tel if ch.isdigit())
-
         html_parts.append(textwrap.dedent(f"""
 <div class="card">
+  <a class="overlay-link" href="./?id={p.get('id')}" target="_self" rel="noopener"></a>
   <h3>{nome}</h3>
   <div class="row"><span class="label">Endereço:</span> {end}</div>
-  <div class="row"><span class="label">Telefone:</span> <a href="tel:{tel_href}">{tel}</a></div>
-  <div class="row"><span class="label">E-mail:</span> <a href="mailto:{email}">{email}</a></div>
+  <div class="row"><span class="label">Telefone:</span> {tel}</div>
+  <div class="row"><span class="label">E-mail:</span> {email}</div>
 </div>
-""").strip())
+""" ).strip())
     html_parts.append("</div>")
 
     st.markdown("\n".join(html_parts), unsafe_allow_html=True)
@@ -209,28 +593,47 @@ def render_cards(pacientes: List[Dict[str, Any]]):
 # ---------------------------
 st.title("🩺 Pacientes do Consultório")
 
-# Barra de busca (envia direto para a API no parâmetro ?nome=)
-q = st.text_input("Pesquisar por nome", placeholder="Digite o nome do paciente... (ex.: Maria)")
+# Verifica se há um paciente selecionado via ?id=
+selected_id = get_selected_paciente_id()
 
-# Busca dados na API conforme o texto
-pacientes, meta = fetch_patients(API_URL, q)
+if selected_id:
+    try:
+        selected_id_int = int(str(selected_id))
+    except Exception:
+        selected_id_int = selected_id
 
-# Botão de download Excel
-if pacientes:
-    excel_data = create_excel_download(pacientes)
-    if excel_data:
-        st.download_button(
-            label="📊 Baixar Excel com todos os pacientes",
-            data=excel_data,
-            file_name=f"pacientes_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help="Clique para baixar todos os pacientes em um arquivo Excel"
-        )
+    paciente = fetch_patient_by_id(API_URL, selected_id_int)
+    if not paciente:
+        pacientes_tmp, _ = fetch_patients(API_URL, "")
+        paciente = next((p for p in pacientes_tmp if str(p.get("id")) == str(selected_id_int)), None)
 
-# Resultados
+    if paciente:
+        with st.spinner("Carregando dados do paciente..."):
+            prontuarios = fetch_prontuarios(API_URL, paciente.get("id"))
+        render_patient_detail(paciente, prontuarios)
+    else:
+        st.warning("Paciente não encontrado.")
+else:
+    # Barra de busca (envia direto para a API no parâmetro ?nome=)
+    q = st.text_input("Pesquisar por nome", placeholder="Digite o nome do paciente... (ex.: Maria)")
 
+    # Busca dados na API conforme o texto
+    with st.spinner("Buscando pacientes..."):
+        pacientes, meta = fetch_patients(API_URL, q)
 
-st.caption(f"{meta.get('total', len(pacientes))} resultado(s) para “{meta.get('query', q or '')}”")
+    # Botão de download Excel
+    if pacientes:
+        excel_data = create_excel_download(pacientes)
+        if excel_data:
+            st.download_button(
+                label="📊 Baixar Excel com todos os pacientes",
+                data=excel_data,
+                file_name=f"pacientes_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                help="Clique para baixar todos os pacientes em um arquivo Excel"
+            )
 
-# Cards
-render_cards(pacientes)
+    st.caption(f"{meta.get('total', len(pacientes))} resultado(s) para “{meta.get('query', q or '')}”")
+
+    # Cards
+    render_cards(pacientes)
