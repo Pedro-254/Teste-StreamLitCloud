@@ -279,22 +279,52 @@ div[data-testid="stButton"] button:hover {
   margin-bottom: 16px;
 }
 
-/* Estilos para o dataframe dos prontuários */
-.stDataFrame {
+/* Grid específico para prontuários - uma coluna */
+.prontuarios-section .cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 12px;
+}
+
+.prontuarios-section .cards-grid .card {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Estilos específicos para os cards de prontuários */
+.prontuarios-section .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
-  overflow: hidden;
+  border-radius: 16px;
+  padding: 18px 20px;
+  position: relative;
+  transition: transform 0.08s ease-in-out, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stDataFrame th {
-  background: #B7A99A;
-  color: #EAE3D2;
-  font-weight: 600;
+.prontuarios-section .card:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
 }
 
-.stDataFrame td {
+.prontuarios-section .card h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: #8B7B6A;
+}
+
+.prontuarios-section .card .row {
+  margin: 8px 0;
+  font-size: 0.96rem;
   color: #A18C7A;
+}
+
+.prontuarios-section .card .label {
+  display: inline-block;
+  width: 110px;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 /* Estilo com máxima especificidade para o caption dos resultados */
@@ -446,25 +476,45 @@ def create_excel_download(pacientes: List[Dict[str, Any]]) -> bytes:
     output.seek(0)
     return output.getvalue()
 
-def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> List[Dict[str, Any]]:
-    """Busca prontuários na API: GET {API_URL}/pacientes/prontuarios?id=<id>."""
+def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    Busca prontuários na API: GET {API_URL}/pacientes/prontuarios?id=<id>
+    Espera resposta:
+    {
+      "paciente": {"id": 30, "nome": "Eduardo Rocha"},
+      "prontuarios": [...],
+      "total_prontuarios": 2,
+      "version": "pacientes-v3-com-prontuarios"
+    }
+    Retorna (lista_de_prontuarios, dados_do_paciente)
+    """
     if not paciente_id:
-        return []
+        return [], {}
     if not api_base_url:
         # Mock quando não há API
-        return [
-            {"id": 101, "data": "2024-05-02", "tipo": "Consulta", "descricao": "Acompanhamento clínico"},
-            {"id": 102, "data": "2024-06-15", "tipo": "Exame", "descricao": "Hemograma completo"},
+        mock_prontuarios = [
+            {"data": "2024-05-02", "tipo": "Consulta", "descricao": "Acompanhamento clínico"},
+            {"data": "2024-06-15", "tipo": "Exame", "descricao": "Hemograma completo"},
         ]
+        mock_paciente = {
+            "id": int(paciente_id) if str(paciente_id).isdigit() else paciente_id,
+            "nome": "Paciente (mock)"
+        }
+        return mock_prontuarios, mock_paciente
+    
     url = f"{api_base_url}/pacientes/prontuarios?id={quote(str(paciente_id))}"
     try:
         resp = requests.get(url, timeout=15)
         resp.raise_for_status()
         data = resp.json()
+        
         if isinstance(data, dict):
-            return data.get("items", [])
-        if isinstance(data, list):
-            return data
+            prontuarios = data.get("prontuarios", [])
+            paciente_info = data.get("paciente", {})
+            return prontuarios, paciente_info
+        else:
+            return [], {}
+            
     except requests.HTTPError:
         # Erro HTTP (como 404) - não exibe erro na interface
         pass
@@ -474,7 +524,8 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> List[Dict[str, Any
     except ValueError:
         # Erro de JSON - não exibe erro na interface
         pass
-    return []
+    
+    return [], {}
 
 def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
     """Busca um paciente específico em {API_URL}/pacientes/<id> (se existir)."""
@@ -520,7 +571,7 @@ def get_selected_paciente_id() -> Any:
     return selected_id
 
 
-def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, Any]]):
+def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, Any]], paciente_api: Dict[str, Any] = None):
     """Renderiza detalhe do paciente com prontuários abaixo, ocupando a página."""
     col1, col2 = st.columns([1, 1], gap="large")
     with col1:
@@ -535,6 +586,9 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
                 pass
             st.rerun()
 
+    # Usa dados da API se disponível, senão usa dados locais
+    nome_paciente = paciente_api.get("nome") if paciente_api else paciente.get("nome", "")
+    
     st.markdown(
         """
 <div class="detail-card">
@@ -545,7 +599,7 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
   <div class="row"><span class="label">E-mail:</span> {email}</div>
 </div>
 """.format(
-            nome=paciente.get("nome", ""),
+            nome=nome_paciente,
             endereco=paciente.get("endereco", ""),
             telefone=paciente.get("telefone", ""),
             email=paciente.get("email", ""),
@@ -557,11 +611,24 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
     if not prontuarios:
         st.info("Nenhum prontuário encontrado para este paciente.")
     else:
-        try:
-            df = pd.DataFrame(prontuarios)
-            st.dataframe(df, use_container_width=True)
-        except Exception:
-            st.json(prontuarios)
+        # Cria cards para os prontuários
+        html_parts = ['<div class="prontuarios-section">', '<div class="cards-grid">']
+        for prontuario in prontuarios:
+            data = prontuario.get("data", "")
+            tipo = prontuario.get("tipo", "")
+            descricao = prontuario.get("descricao", "")
+            
+            html_parts.append(textwrap.dedent(f"""
+<div class="card">
+  <h3>{tipo}</h3>
+  <div class="row"><span class="label">Data:</span> {data}</div>
+  <div class="row"><span class="label">Descrição:</span> {descricao}</div>
+</div>
+""").strip())
+        html_parts.append("</div>")
+        html_parts.append("</div>")
+        
+        st.markdown("\n".join(html_parts), unsafe_allow_html=True)
 
 def render_cards(pacientes: List[Dict[str, Any]]):
     """Renderiza cards dos pacientes em grid responsivo."""
@@ -591,7 +658,7 @@ def render_cards(pacientes: List[Dict[str, Any]]):
 # ---------------------------
 # UI
 # ---------------------------
-st.title("🩺 Pacientes do Consultório")
+st.title("Pacientes Carolina Adorno")
 
 # Verifica se há um paciente selecionado via ?id=
 selected_id = get_selected_paciente_id()
@@ -609,8 +676,8 @@ if selected_id:
 
     if paciente:
         with st.spinner("Carregando dados do paciente..."):
-            prontuarios = fetch_prontuarios(API_URL, paciente.get("id"))
-        render_patient_detail(paciente, prontuarios)
+            prontuarios, paciente_api = fetch_prontuarios(API_URL, paciente.get("id"))
+        render_patient_detail(paciente, prontuarios, paciente_api)
     else:
         st.warning("Paciente não encontrado.")
 else:
