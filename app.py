@@ -421,6 +421,19 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
         items = data.get("items", [])
         normalized = []
         for item in items:
+            # Combina cidade e estado se existirem separadamente
+            cidade = item.get("cidade", "")
+            estado = item.get("estado", "")
+            cidade_estado = ""
+            if cidade and estado:
+                cidade_estado = f"{cidade}/{estado}"
+            elif cidade:
+                cidade_estado = cidade
+            elif estado:
+                cidade_estado = estado
+            else:
+                cidade_estado = item.get("cidade_estado", "")  # Fallback para formato antigo
+            
             normalized.append({
                 "id": item.get("id"),
                 "nome": item.get("nome") or "",
@@ -431,7 +444,7 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
                 "profissao": item.get("profissao") or "",
                 "cpf": item.get("cpf") or "",
                 "endereco": item.get("endereco") or "",
-                "cidade_estado": item.get("cidade_estado") or "",
+                "cidade_estado": cidade_estado,
                 "cep": item.get("cep") or "",
                 "observacao": item.get("observacao") or "",
                 "como_conheceu": item.get("como_conheceu") or "",
@@ -576,6 +589,19 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
             return {}
         resp.raise_for_status()
         data = resp.json()
+        # Combina cidade e estado se existirem separadamente
+        cidade = data.get("cidade", "")
+        estado = data.get("estado", "")
+        cidade_estado = ""
+        if cidade and estado:
+            cidade_estado = f"{cidade}/{estado}"
+        elif cidade:
+            cidade_estado = cidade
+        elif estado:
+            cidade_estado = estado
+        else:
+            cidade_estado = data.get("cidade_estado", "")  # Fallback para formato antigo
+        
         return {
             "id": data.get("id"),
             "nome": data.get("nome", ""),
@@ -586,7 +612,7 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
             "profissao": data.get("profissao", ""),
             "cpf": data.get("cpf", ""),
             "endereco": data.get("endereco", ""),
-            "cidade_estado": data.get("cidade_estado", ""),
+            "cidade_estado": cidade_estado,
             "cep": data.get("cep", ""),
             "observacao": data.get("observacao", ""),
             "como_conheceu": data.get("como_conheceu", ""),
