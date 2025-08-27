@@ -262,6 +262,16 @@ div[data-testid="stButton"] button:hover {
   line-height: 1.5;
 }
 
+.detail-card .row .value {
+  color: #8B7B6A;
+  font-weight: 400;
+}
+
+.detail-card .row .empty {
+  color: #B7A99A;
+  font-style: italic;
+}
+
 .detail-card .label {
   display: inline-block;
   width: 120px;
@@ -392,10 +402,8 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
     if not api_base_url:
         # Mock para dev/local sem API
         items = [
-            {"id": 29, "nome": "Mariana Pereira", "endereco": "Av. Faria Lima, 584 - Fortaleza/CE",
-             "telefone": "(31) 95563-8579", "email": "marianapereira.29@example.com"},
-            {"id": 33, "nome": "Mariana Araujo", "endereco": "Av. Brasil, 3977 - São Paulo/SP",
-             "telefone": "(48) 99883-1998", "email": "marianaaraujo.33@mail.com"},
+            {"id": 29, "nome": "Mariana Pereira", "nascimento": "15/03/1985", "celular": "(31) 95563-8579", "telefone_residencial": "(31) 3333-4444", "email": "marianapereira.29@example.com", "profissao": "Advogada", "cpf": "123.456.789-00", "endereco": "Av. Faria Lima, 584", "cidade_estado": "Fortaleza/CE", "cep": "60175-000", "observacao": "Paciente assídua", "como_conheceu": "Indicação"},
+            {"id": 33, "nome": "Mariana Araujo", "nascimento": "22/07/1990", "celular": "(48) 99883-1998", "telefone_residencial": "(48) 2222-3333", "email": "marianaaraujo.33@mail.com", "profissao": "Médica", "cpf": "987.654.321-00", "endereco": "Av. Brasil, 3977", "cidade_estado": "São Paulo/SP", "cep": "01330-000", "observacao": "Primeira consulta", "como_conheceu": "Internet"},
         ]
         return items, {"query": nome, "total": len(items), "version": "mock"}
 
@@ -416,9 +424,17 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
             normalized.append({
                 "id": item.get("id"),
                 "nome": item.get("nome") or "",
-                "endereco": item.get("endereco") or "",
-                "telefone": item.get("telefone") or "",
+                "nascimento": item.get("nascimento") or "",
+                "celular": item.get("celular") or item.get("telefone", "") or "",  # Fallback para compatibilidade
+                "telefone_residencial": item.get("telefone_residencial") or "",
                 "email": item.get("email") or "",
+                "profissao": item.get("profissao") or "",
+                "cpf": item.get("cpf") or "",
+                "endereco": item.get("endereco") or "",
+                "cidade_estado": item.get("cidade_estado") or "",
+                "cep": item.get("cep") or "",
+                "observacao": item.get("observacao") or "",
+                "como_conheceu": item.get("como_conheceu") or "",
             })
         meta = {
             "query": data.get("query", nome),
@@ -447,12 +463,18 @@ def create_excel_download(pacientes: List[Dict[str, Any]]) -> bytes:
     # Cria DataFrame com os dados dos pacientes
     df = pd.DataFrame(pacientes)
     
+    # Garante que todos os campos necessários existam
+    required_columns = ['nome', 'nascimento', 'celular', 'telefone_residencial', 'email', 'profissao', 'cpf', 'endereco', 'cidade_estado', 'cep', 'observacao', 'como_conheceu', 'id']
+    for col in required_columns:
+        if col not in df.columns:
+            df[col] = ""
+    
     # Reorganiza as colunas para uma ordem mais lógica
-    columns_order = ['nome', 'endereco', 'telefone', 'email', 'id']
+    columns_order = ['nome', 'nascimento', 'celular', 'telefone_residencial', 'email', 'profissao', 'cpf', 'endereco', 'cidade_estado', 'cep', 'observacao', 'como_conheceu', 'id']
     df = df[columns_order]
     
     # Renomeia as colunas para português
-    df.columns = ['Nome', 'Endereço', 'Telefone', 'E-mail', 'ID']
+    df.columns = ['Nome', 'Nascimento', 'Celular', 'Telefone Residencial', 'E-mail', 'Profissão', 'CPF', 'Endereço', 'Cidade/Estado', 'CEP', 'Observação', 'Como conheceu', 'ID']
     
     # Cria o arquivo Excel em memória
     output = BytesIO()
@@ -535,9 +557,17 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
         return {
             "id": int(paciente_id) if str(paciente_id).isdigit() else paciente_id,
             "nome": "Paciente (mock)",
-            "endereco": "Rua Exemplo, 123",
-            "telefone": "(00) 00000-0000",
+            "nascimento": "",
+            "celular": "(00) 00000-0000",
+            "telefone_residencial": "(00) 00000-0000",
             "email": "paciente@example.com",
+            "profissao": "",
+            "cpf": "",
+            "endereco": "Rua Exemplo, 123",
+            "cidade_estado": "",
+            "cep": "",
+            "observacao": "",
+            "como_conheceu": "",
         }
     url = f"{api_base_url}/pacientes/{quote(str(paciente_id))}"
     try:
@@ -549,9 +579,17 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
         return {
             "id": data.get("id"),
             "nome": data.get("nome", ""),
-            "endereco": data.get("endereco", ""),
-            "telefone": data.get("telefone", ""),
+            "nascimento": data.get("nascimento", ""),
+            "celular": data.get("celular", "") or data.get("telefone", "") or "",  # Fallback para compatibilidade
+            "telefone_residencial": data.get("telefone_residencial", ""),
             "email": data.get("email", ""),
+            "profissao": data.get("profissao", ""),
+            "cpf": data.get("cpf", ""),
+            "endereco": data.get("endereco", ""),
+            "cidade_estado": data.get("cidade_estado", ""),
+            "cep": data.get("cep", ""),
+            "observacao": data.get("observacao", ""),
+            "como_conheceu": data.get("como_conheceu", ""),
         }
     except Exception:
         return {}
@@ -593,21 +631,32 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
     # Usa dados da API se disponível, senão usa dados locais
     nome_paciente = paciente_api.get("nome") if paciente_api else paciente.get("nome", "")
     
+    # Função auxiliar para renderizar campos com formatação condicional
+    def format_field(value, field_name):
+        if value:
+            return f'<div class="row"><span class="label">{field_name}:</span> <span class="value">{value}</span></div>'
+        else:
+            return f'<div class="row"><span class="label">{field_name}:</span> <span class="empty">-</span></div>'
+    
+    # Renderiza os dados do paciente
     st.markdown(
-        """
+        f"""
 <div class="detail-card">
   <h2 style="margin-top:0;">Dados do Paciente</h2>
-  <div class="row"><span class="label">Nome:</span> {nome}</div>
-  <div class="row"><span class="label">Endereço:</span> {endereco}</div>
-  <div class="row"><span class="label">Telefone:</span> {telefone}</div>
-  <div class="row"><span class="label">E-mail:</span> {email}</div>
+  {format_field(nome_paciente, "Nome")}
+  {format_field(paciente.get("nascimento", ""), "Nascimento")}
+  {format_field(paciente.get("celular", "") or paciente.get("telefone", ""), "Celular")}
+  {format_field(paciente.get("telefone_residencial", ""), "Telefone Residencial")}
+  {format_field(paciente.get("email", ""), "E-mail")}
+  {format_field(paciente.get("profissao", ""), "Profissão")}
+  {format_field(paciente.get("cpf", ""), "CPF")}
+  {format_field(paciente.get("endereco", ""), "Endereço")}
+  {format_field(paciente.get("cidade_estado", ""), "Cidade/Estado")}
+  {format_field(paciente.get("cep", ""), "CEP")}
+  {format_field(paciente.get("observacao", ""), "Observação")}
+  {format_field(paciente.get("como_conheceu", ""), "Como conheceu")}
 </div>
-""".format(
-            nome=nome_paciente,
-            endereco=paciente.get("endereco", ""),
-            telefone=paciente.get("telefone", ""),
-            email=paciente.get("email", ""),
-        ),
+""",
         unsafe_allow_html=True,
     )
 
@@ -643,14 +692,12 @@ def render_cards(pacientes: List[Dict[str, Any]]):
     html_parts = ['<div class="cards-grid">']
     for p in pacientes:
         nome = p.get("nome", "")
-        end = p.get("endereco", "")
-        tel = p.get("telefone", "")
+        tel = p.get("celular", "") or p.get("telefone", "")  # Fallback para compatibilidade
         email = p.get("email", "")
         html_parts.append(textwrap.dedent(f"""
 <div class="card">
   <a class="overlay-link" href="./?id={p.get('id')}" target="_self" rel="noopener"></a>
   <h3>{nome}</h3>
-  <div class="row"><span class="label">Endereço:</span> {end}</div>
   <div class="row"><span class="label">Telefone:</span> {tel}</div>
   <div class="row"><span class="label">E-mail:</span> {email}</div>
 </div>
