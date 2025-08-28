@@ -8,6 +8,7 @@ from urllib.parse import quote
 import textwrap
 import pandas as pd
 from io import BytesIO
+from datetime import datetime
 
 # Carrega variáveis do .env
 load_dotenv()
@@ -372,6 +373,25 @@ p, span, div {
   color: #8B7B6A !important;
 }
 
+/* Estilo para links de PDF */
+.prontuarios-section .card a {
+  color: #8B7B6A !important;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.prontuarios-section .card a:hover {
+  text-decoration: underline;
+  color: #A18C7A !important;
+}
+
+/* Estilo para o histórico com HTML */
+.prontuarios-section .card .row div {
+  color: #8B7B6A !important;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
 </style>
 """
 st.markdown(CARD_CSS, unsafe_allow_html=True)
@@ -516,10 +536,10 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[st
     Busca prontuários na API: GET {API_URL}/pacientes/prontuarios?id=<id>
     Espera resposta:
     {
-      "paciente": {"id": 30, "nome": "Eduardo Rocha"},
+      "paciente": {"id": "-1260774740", "nome": "Neide Aparecida Gomes"},
       "prontuarios": [...],
-      "total_prontuarios": 2,
-      "version": "pacientes-v3-com-prontuarios"
+      "total_prontuarios": 3,
+      "version": "pacientes-v5-firebase-only"
     }
     Retorna (lista_de_prontuarios, dados_do_paciente)
     """
@@ -528,8 +548,8 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[st
     if not api_base_url:
         # Mock quando não há API
         mock_prontuarios = [
-            {"data": "2024-05-02", "tipo": "Consulta", "descricao": "Acompanhamento clínico"},
-            {"data": "2024-06-15", "tipo": "Exame", "descricao": "Hemograma completo"},
+            {"data": "2024-05-02", "historico": "Acompanhamento clínico", "tipo_doc": "pdf", "classe": "exemplo.pdf"},
+            {"data": "2024-06-15", "historico": "Hemograma completo", "tipo_doc": "", "classe": ""},
         ]
         mock_paciente = {
             "id": int(paciente_id) if str(paciente_id).isdigit() else paciente_id,
@@ -660,6 +680,20 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
     # Função auxiliar para renderizar campos com formatação condicional
     def format_field(value, field_name):
         if value:
+            # Formatação especial para data de nascimento
+            if field_name == "Nascimento" and isinstance(value, str):
+                try:
+                    # Remove a hora se existir e formata apenas a data
+                    if " " in value:
+                        date_part = value.split(" ")[0]
+                        dt = datetime.strptime(date_part, "%Y-%m-%d")
+                        value = dt.strftime("%d/%m/%Y")
+                    elif "T" in value:
+                        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                        value = dt.strftime("%d/%m/%Y")
+                except:
+                    pass  # Mantém o valor original se não conseguir formatar
+            
             return f'<div class="row"><span class="label">{field_name}:</span> <span class="value">{value}</span></div>'
         else:
             return f'<div class="row"><span class="label">{field_name}:</span> <span class="empty">-</span></div>'
@@ -690,20 +724,40 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
     if not prontuarios:
         st.info("Nenhum prontuário encontrado para este paciente.")
     else:
+        # Ordena os prontuários por data (mais recente primeiro)
+        prontuarios_ordenados = sorted(prontuarios, key=lambda x: x.get("data", ""), reverse=True)
+        
         # Cria cards para os prontuários
         html_parts = ['<div class="prontuarios-section">', '<div class="cards-grid">']
-        for prontuario in prontuarios:
+        for prontuario in prontuarios_ordenados:
             data = prontuario.get("data", "")
-            tipo = prontuario.get("tipo", "")
-            descricao = prontuario.get("descricao", "")
+            historico = prontuario.get("historico", "")
+            tipo_doc = prontuario.get("tipo_doc", "")
+            classe = prontuario.get("classe", "")
             
-            html_parts.append(textwrap.dedent(f"""
+            # Formata a data para exibição mais amigável
+            data_formatada = data
+            if data and "T" in data:
+                try:
+                    dt = datetime.fromisoformat(data.replace("Z", "+00:00"))
+                    data_formatada = dt.strftime("%d/%m/%Y %H:%M")
+                except:
+                    data_formatada = data
+            
+            # Cria o card do prontuário
+            card_html = f"""
 <div class="card">
-  <h3>{tipo}</h3>
-  <div class="row"><span class="label">Data:</span> {data}</div>
-  <div class="row"><span class="label">Descrição:</span> {descricao}</div>
-</div>
-""").strip())
+  <div class="row"><span class="label">Data:</span> {data_formatada}</div>
+  <div class="row"><span class="label">Histórico:</span> <div style="margin-top: 5px; line-height: 1.4;">{historico}</div></div>
+"""
+            
+            # Adiciona link para PDF se for um documento PDF
+            if tipo_doc == "pdf" and classe:
+                card_html += f'<div class="row"><span class="label">Documento:</span> <a href="{classe}" target="_blank" rel="noopener">📄 Visualizar PDF</a></div>'
+            
+            card_html += "</div>"
+            html_parts.append(card_html)
+            
         html_parts.append("</div>")
         html_parts.append("</div>")
         
