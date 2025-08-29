@@ -982,7 +982,7 @@ def render_cards(pacientes: List[Dict[str, Any]]):
         email = p.get("email", "")
         html_parts.append(textwrap.dedent(f"""
 <div class="card">
-  <a class="overlay-link" href="./?id={p.get('id')}" target="_self"></a>
+  <a class="overlay-link" href="./?id={p.get('id')}" target="_self" rel="noopener"></a>
   <h3>{nome}</h3>
   <div class="row"><span class="label">Telefone:</span> {tel}</div>
   <div class="row"><span class="label">E-mail:</span> {email}</div>
@@ -1094,33 +1094,34 @@ else:
 
     current_page_num = int(meta.get('page', 1))
     total_pages = int(meta.get('total_pages', 1))
-    
+
     page_text = (
         f"Página {current_page_num}"
         if total_pages <= 1 else f"Página {current_page_num} de {total_pages}"
     )
 
     # Controles de paginação usando botões do Streamlit (não abrem nova aba)
+    # Aparência similar aos botões originais
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col1:
         if current_page_num > 1:
-            if st.button("◀ Anterior", help="Página anterior", key="prev_page"):
+            if st.button("◀", help="Página anterior", key="prev_page"):
                 st.query_params["page"] = current_page_num - 1
                 st.rerun()
         else:
-            st.button("◀ Anterior", disabled=True, key="prev_page_disabled")
+            st.button("◀", disabled=True, key="prev_page_disabled")
     
     with col2:
         st.markdown(f"<div class='pagination-info'>{page_text}</div>", unsafe_allow_html=True)
     
     with col3:
         if current_page_num < total_pages:
-            if st.button("Próxima ▶", help="Próxima página", key="next_page"):
+            if st.button("▶", help="Próxima página", key="next_page"):
                 st.query_params["page"] = current_page_num + 1
                 st.rerun()
         else:
-            st.button("Próxima ▶", disabled=True, key="next_page_disabled")
+            st.button("▶", disabled=True, key="next_page_disabled")
     
     # Seletor rápido de página (apenas se houver muitas páginas)
     if meta.get('total_pages', 1) > 10:
