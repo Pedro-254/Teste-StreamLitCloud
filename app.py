@@ -223,27 +223,6 @@ div[data-testid="stButton"] button:disabled {
   cursor: not-allowed !important;
 }
 
-/* Estilos específicos para botões de paginação */
-div[data-testid="stButton"] button[key*="prev_page"],
-div[data-testid="stButton"] button[key*="next_page"] {
-  background-color: #EAE3D2 !important;
-  color: #8B7B6A !important;
-  border-color: #A18C7A !important;
-  border-radius: 8px !important;
-  padding: 8px 16px !important;
-  font-size: 16px !important;
-  min-width: 50px !important;
-  min-height: 40px !important;
-  transition: all 0.2s ease !important;
-}
-
-div[data-testid="stButton"] button[key*="prev_page"]:hover,
-div[data-testid="stButton"] button[key*="next_page"]:hover {
-  background-color: #D1C6B8 !important;
-  border-color: #8B7B6A !important;
-  transform: translateY(-1px) !important;
-}
-
 /* Estilo específico para o botão da primeira página */
 div[data-testid="stButton"] button[data-testid="baseButton-first_page"] {
   background-color: #B7A99A !important;
@@ -478,11 +457,6 @@ p, span, div {
   gap: 15px;
   flex-wrap: nowrap;
   white-space: nowrap;
-}
-
-/* Centraliza botões apenas nas áreas de paginação */
-.pagination-container div[data-testid="stButton"] {
-  justify-content: center !important;
 }
 
 /* Links/Spans estilizados como botões na paginação */
@@ -1008,7 +982,7 @@ def render_cards(pacientes: List[Dict[str, Any]]):
         email = p.get("email", "")
         html_parts.append(textwrap.dedent(f"""
 <div class="card">
-  <a class="overlay-link" href="./?id={p.get('id')}" target="_self" rel="noopener"></a>
+  <a class="overlay-link" href="./?id={p.get('id')}" target="_self"></a>
   <h3>{nome}</h3>
   <div class="row"><span class="label">Telefone:</span> {tel}</div>
   <div class="row"><span class="label">E-mail:</span> {email}</div>
@@ -1113,42 +1087,40 @@ else:
     # Cards
     render_cards(pacientes)
 
-    # Controles de navegação entre páginas - usando botões do Streamlit para evitar abrir nova aba
+    # Controles de navegação entre páginas - sem colunas (evita quebra em telas estreitas)
     if meta.get('total_pages', 1) > 1:
         st.markdown("---")
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     current_page_num = int(meta.get('page', 1))
     total_pages = int(meta.get('total_pages', 1))
-    current_nome = st.query_params.get("nome", "") or search_query
-
-    # Container para os controles de paginação
-    st.markdown('<div class="pagination-container">', unsafe_allow_html=True)
     
-    # Botão anterior
-    if current_page_num > 1:
-        if st.button("◀", key="prev_page", help="Página anterior"):
-            st.query_params["page"] = current_page_num - 1
-            st.rerun()
-    else:
-        st.markdown('<span class="pagination-btn disabled">◀</span>', unsafe_allow_html=True)
-    
-    # Informação da página atual
     page_text = (
         f"Página {current_page_num}"
         if total_pages <= 1 else f"Página {current_page_num} de {total_pages}"
     )
-    st.markdown(f'<div class="pagination-info">{page_text}</div>', unsafe_allow_html=True)
+
+    # Controles de paginação usando botões do Streamlit (não abrem nova aba)
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    # Botão próximo
-    if current_page_num < total_pages:
-        if st.button("▶", key="next_page", help="Próxima página"):
-            st.query_params["page"] = current_page_num + 1
-            st.rerun()
-    else:
-        st.markdown('<span class="pagination-btn disabled">▶</span>', unsafe_allow_html=True)
+    with col1:
+        if current_page_num > 1:
+            if st.button("◀ Anterior", help="Página anterior", key="prev_page"):
+                st.query_params["page"] = current_page_num - 1
+                st.rerun()
+        else:
+            st.button("◀ Anterior", disabled=True, key="prev_page_disabled")
     
-    st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div class='pagination-info'>{page_text}</div>", unsafe_allow_html=True)
+    
+    with col3:
+        if current_page_num < total_pages:
+            if st.button("Próxima ▶", help="Próxima página", key="next_page"):
+                st.query_params["page"] = current_page_num + 1
+                st.rerun()
+        else:
+            st.button("Próxima ▶", disabled=True, key="next_page_disabled")
     
     # Seletor rápido de página (apenas se houver muitas páginas)
     if meta.get('total_pages', 1) > 10:
