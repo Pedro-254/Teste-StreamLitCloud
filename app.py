@@ -808,16 +808,36 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
             "observacao": "",
             "como_conheceu": "",
         }
-    url = f"{api_base_url}/pacientes/{quote(str(paciente_id))}"
+    # Novo formato: busca via /pacientes?id=<id>, que retorna lista de itens
+    url = f"{api_base_url}/pacientes?id={quote(str(paciente_id))}"
     try:
         resp = requests.get(url, timeout=15)
-        if resp.status_code == 404:
-            return {}
         resp.raise_for_status()
         data = resp.json()
-        # Combina cidade e estado se existirem separadamente
-        cidade = data.get("cidade", "")
-        estado = data.get("estado", "")
+
+        # A API pode retornar {"items": [...]} ou uma lista direta
+        if isinstance(data, dict):
+            items = data.get("items", [])
+        elif isinstance(data, list):
+            items = data
+        else:
+            items = []
+
+        # Seleciona item que casa exatamente com o id
+        matched = None
+        for item in items:
+            if str(item.get("id")) == str(paciente_id):
+                matched = item
+                break
+        if not matched and items:
+            matched = items[0]
+
+        if not matched:
+            return {}
+
+        # Normaliza cidade/estado e campos esperados
+        cidade = matched.get("cidade", "")
+        estado = matched.get("estado", "")
         cidade_estado = ""
         if cidade and estado:
             cidade_estado = f"{cidade}/{estado}"
@@ -826,25 +846,30 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
         elif estado:
             cidade_estado = estado
         else:
-            cidade_estado = data.get("cidade_estado", "")  # Fallback para formato antigo
-        
+            cidade_estado = matched.get("cidade_estado", "")  # Fallback para formato antigo
+
         return {
-            "id": data.get("id"),
-            "nome": data.get("nome", ""),
-            "nascimento": data.get("nascimento", ""),
-            "celular": data.get("celular", "") or data.get("telefone", "") or "",  # Fallback para compatibilidade
-            "telefone_residencial": data.get("telefone_residencial", ""),
-            "email": data.get("email", ""),
-            "profissao": data.get("profissao", ""),
-            "cpf": data.get("cpf", ""),
-            "endereco": data.get("endereco", ""),
+            "id": matched.get("id"),
+            "nome": matched.get("nome", ""),
+            "nascimento": matched.get("nascimento", ""),
+            "celular": matched.get("celular", "") or matched.get("telefone", "") or "",  # Fallback para compatibilidade
+            "telefone_residencial": matched.get("telefone_residencial", ""),
+            "email": matched.get("email", ""),
+            "profissao": matched.get("profissao", ""),
+            "cpf": matched.get("cpf", ""),
+            "endereco": matched.get("endereco", ""),
             "cidade_estado": cidade_estado,
-            "cep": data.get("cep", ""),
-            "observacao": data.get("observacao", ""),
-            "como_conheceu": data.get("como_conheceu", ""),
+            "cep": matched.get("cep", ""),
+            "observacao": matched.get("observacao", ""),
+            "como_conheceu": matched.get("como_conheceu", ""),
         }
-    except Exception:
-        return {}
+    except requests.HTTPError:
+        pass
+    except requests.RequestException:
+        pass
+    except ValueError:
+        pass
+    return {}
 
 def get_selected_paciente_id() -> Any:
     """Obtém o parâmetro id da URL (compatível com APIs antiga e nova)."""
