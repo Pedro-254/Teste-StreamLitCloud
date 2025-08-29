@@ -144,6 +144,9 @@ div[data-testid="stCaption"] * {
   background-color: #EAE3D2 !important;
   color: #8B7B6A !important;
   border-color: #A18C7A !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .stButton > button:hover {
@@ -171,6 +174,7 @@ div[data-testid="stButton"] button:active {
   background-color: #EAE3D2 !important;
   color: #8B7B6A !important;
   border-color: #A18C7A !important;
+  white-space: nowrap !important;
 }
 
 div[data-testid="stButton"] button:hover {
@@ -186,6 +190,47 @@ div[data-testid="stButton"] button:hover {
 }
 
 .stDownloadButton > button:hover {
+  background-color: #A18C7A !important;
+  border-color: #8B7B6A !important;
+}
+
+/* Estilos específicos para os controles de paginação */
+div[data-testid="stButton"] button {
+  background-color: #EAE3D2 !important;
+  color: #8B7B6A !important;
+  border-color: #A18C7A !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 16px !important;
+  min-width: 50px !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  min-height: 40px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+div[data-testid="stButton"] button:hover {
+  background-color: #D1C6B8 !important;
+  border-color: #8B7B6A !important;
+  transform: translateY(-1px) !important;
+}
+
+div[data-testid="stButton"] button:disabled {
+  background-color: #F5F5F5 !important;
+  color: #CCCCCC !important;
+  border-color: #E0E0E0 !important;
+  cursor: not-allowed !important;
+}
+
+/* Estilo específico para o botão da primeira página */
+div[data-testid="stButton"] button[data-testid="baseButton-first_page"] {
+  background-color: #B7A99A !important;
+  color: #EAE3D2 !important;
+  border-color: #A18C7A !important;
+}
+
+div[data-testid="stButton"] button[data-testid="baseButton-first_page"]:hover {
   background-color: #A18C7A !important;
   border-color: #8B7B6A !important;
 }
@@ -392,6 +437,155 @@ p, span, div {
   line-height: 1.4;
 }
 
+/* Estilos para centralizar os controles de paginação */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0;
+  padding: 20px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+/* Linha interna da paginação para manter elementos lado a lado */
+.pagination-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* Links/Spans estilizados como botões na paginação */
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #EAE3D2 !important;
+  color: #8B7B6A !important;
+  border: 1px solid #A18C7A !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 16px !important;
+  min-width: 50px !important;
+  min-height: 40px !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+}
+
+.pagination-btn:hover {
+  background-color: #D1C6B8 !important;
+  border-color: #8B7B6A !important;
+  transform: translateY(-1px) !important;
+}
+
+.pagination-btn.disabled {
+  background-color: #F5F5F5 !important;
+  color: #CCCCCC !important;
+  border-color: #E0E0E0 !important;
+  pointer-events: none !important;
+}
+
+/* Responsivo: em telas muito estreitas, reduza fonte/padding do botão para não quebrar o layout */
+@media (max-width: 500px) {
+  div[data-testid="stButton"] button,
+  .stButton > button,
+  .pagination-btn {
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+  }
+}
+
+/* Evita sobreposição do botão sobre o input em larguras intermediárias */
+@media (max-width: 800px) {
+  .st-emotion-cache-ocqkz7, /* container de coluna (classe pode variar por tema/versão) */
+  .st-emotion-cache-13ln4jf {
+    min-width: 0 !important;
+  }
+  div[data-testid="stButton"] button,
+  .stButton > button {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+.pagination-info {
+  text-align: center;
+  color: #8B7B6A;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 150px;
+}
+
+/* Estilos específicos para botões de navegação */
+.navigation-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* Container para seletor de página rápida */
+.quick-page-selector {
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px;
+}
+
+.quick-page-selector .page-selector-title {
+  color: #8B7B6A;
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+/* Alinha botões à esquerda por padrão */
+div[data-testid="stButton"] {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Garante que o texto de página ocupe espaço sem quebrar */
+.pagination-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+/* Centraliza botões apenas nas áreas de paginação e seletor rápido */
+.pagination-container div[data-testid="stButton"],
+.quick-page-selector div[data-testid="stButton"] {
+  justify-content: center !important;
+}
+
+/* Search row: keep input + ✖ + Buscar in one line */
+div[data-testid="stHorizontalBlock"]:has(input[placeholder*="Digite o nome do paciente"]) {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: end !important;
+  gap: 8px !important;
+}
+
+div[data-testid="stHorizontalBlock"]:has(input[placeholder*="Digite o nome do paciente"]) > div:first-child {
+  flex: 1 1 auto !important;
+  min-width: 180px !important;
+}
+
+div[data-testid="stHorizontalBlock"]:has(input[placeholder*="Digite o nome do paciente"]) > div:nth-child(2),
+div[data-testid="stHorizontalBlock"]:has(input[placeholder*="Digite o nome do paciente"]) > div:nth-child(3) {
+  flex: 0 0 auto !important;
+}
+
+div[data-testid="stHorizontalBlock"]:has(input[placeholder*="Digite o nome do paciente"]) div[data-testid="stButton"] button {
+  width: auto !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+}
+
 </style>
 """
 st.markdown(CARD_CSS, unsafe_allow_html=True)
@@ -407,9 +601,9 @@ def normalize(s: str) -> str:
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     return s.lower().strip()
 
-def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+def fetch_patients(api_base_url: str, nome: str, page: int = 1) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
-    Busca pacientes na API: GET {API_URL}/pacientes?nome=<nome>
+    Busca pacientes na API: GET {API_URL}/pacientes?nome=<nome>&page=<page>
     Espera resposta:
     {
       "items": [...],
@@ -425,11 +619,17 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
             {"id": 29, "nome": "Mariana Pereira", "nascimento": "15/03/1985", "celular": "(31) 95563-8579", "telefone_residencial": "(31) 3333-4444", "email": "marianapereira.29@example.com", "profissao": "Advogada", "cpf": "123.456.789-00", "endereco": "Av. Faria Lima, 584", "cidade_estado": "Fortaleza/CE", "cep": "60175-000", "observacao": "Paciente assídua", "como_conheceu": "Indicação"},
             {"id": 33, "nome": "Mariana Araujo", "nascimento": "22/07/1990", "celular": "(48) 99883-1998", "telefone_residencial": "(48) 2222-3333", "email": "marianaaraujo.33@mail.com", "profissao": "Médica", "cpf": "987.654.321-00", "endereco": "Av. Brasil, 3977", "cidade_estado": "São Paulo/SP", "cep": "01330-000", "observacao": "Primeira consulta", "como_conheceu": "Internet"},
         ]
-        return items, {"query": nome, "total": len(items), "version": "mock"}
+        return items, {"query": nome, "total": len(items), "version": "mock", "page": page, "total_pages": 1}
 
-    # Se não houver nome, faz query sem parâmetro
+    # Constrói a URL com parâmetros
+    params = []
     if nome and nome.strip():
-        url = f"{api_base_url}/pacientes?nome={quote(nome)}"
+        params.append(f"nome={quote(nome)}")
+    if page > 1:
+        params.append(f"page={page}")
+    
+    if params:
+        url = f"{api_base_url}/pacientes?{'&'.join(params)}"
     else:
         url = f"{api_base_url}/pacientes"
 
@@ -469,10 +669,16 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
                 "observacao": item.get("observacao") or "",
                 "como_conheceu": item.get("como_conheceu") or "",
             })
+        
+        total = data.get("total", len(normalized))
+        total_pages = max(1, (total + 24) // 25)  # Calcula total de páginas (25 por página)
+        
         meta = {
             "query": data.get("query", nome),
-            "total": data.get("total", len(normalized)),
+            "total": total,
             "version": data.get("version", ""),
+            "page": page,
+            "total_pages": total_pages,
         }
         return normalized, meta
 
@@ -486,7 +692,7 @@ def fetch_patients(api_base_url: str, nome: str) -> Tuple[List[Dict[str, Any]], 
         # Erro de JSON - não exibe erro na interface
         pass
 
-    return [], {"query": nome, "total": 0, "version": ""}
+    return [], {"query": nome, "total": 0, "version": "", "page": page, "total_pages": 1}
 
 def create_excel_download(pacientes: List[Dict[str, Any]]) -> bytes:
     """Cria um arquivo Excel com todos os pacientes para download."""
@@ -831,26 +1037,98 @@ else:
     if 'prontuarios_cache' in st.session_state:
         del st.session_state['prontuarios_cache']
     
-    # Barra de busca (envia direto para a API no parâmetro ?nome=)
-    q = st.text_input("Pesquisar por nome", placeholder="Digite o nome do paciente... (ex.: Maria)")
+    # Barra de busca (sem botões)
+    st.markdown("<div style='color: #000000; font-weight: 500;'>Pesquisar por nome</div>", unsafe_allow_html=True)
+    default_nome = st.query_params.get("nome", "")
+    if "search_q" not in st.session_state:
+        st.session_state["search_q"] = default_nome
+    # Renderiza input sem forçar value em cada rerun
+    q = st.text_input("", placeholder="Digite o nome do paciente... (ex.: Maria)", label_visibility="collapsed", key="search_q")
+    # Inicializa referência anterior se necessário
+    if "last_search_query" not in st.session_state:
+        st.session_state["last_search_query"] = (st.session_state.get("search_q", "") or "").strip()
+    # Só reseta para página 1 quando o valor realmente muda
+    new_query = (st.session_state.get("search_q", "") or "").strip()
+    prev_query = st.session_state.get("last_search_query", default_nome or "")
+    if new_query != prev_query:
+        if new_query:
+            st.query_params["nome"] = new_query
+        else:
+            try:
+                del st.query_params["nome"]
+            except Exception:
+                pass
+            try:
+                del st.query_params["page"]
+            except Exception:
+                pass
+        st.query_params["page"] = 1
+        st.session_state["last_search_query"] = new_query
 
-    # Busca dados na API conforme o texto
+    # Busca dados na API conforme o texto e página (auto-aplica ao digitar)
+    # Se não há texto digitado, tenta pegar da URL
+    search_query = q.strip() if q.strip() else st.query_params.get("nome", "")
+    # (Sincronização de URL já tratada acima ao detectar mudança de texto)
+    
+    # Obtém a página atual da URL
+    current_page = 1
+    url_page = st.query_params.get("page", "1")
+    try:
+        current_page = int(url_page) if url_page.isdigit() else 1
+    except:
+        current_page = 1
+    
     with st.spinner("Buscando pacientes..."):
-        pacientes, meta = fetch_patients(API_URL, q)
-
-    # Botão de download Excel
-    if pacientes:
-        excel_data = create_excel_download(pacientes)
-        if excel_data:
-            st.download_button(
-                label="📊 Baixar Excel com todos os pacientes",
-                data=excel_data,
-                file_name=f"pacientes_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                help="Clique para baixar todos os pacientes em um arquivo Excel"
-            )
-
+        pacientes, meta = fetch_patients(API_URL, search_query, current_page)
+    
+    
     st.caption(f"{meta.get('total', len(pacientes))} resultado(s) para “{meta.get('query', q or '')}”")
 
     # Cards
     render_cards(pacientes)
+
+    # Controles de navegação entre páginas - sem colunas (evita quebra em telas estreitas)
+    if meta.get('total_pages', 1) > 1:
+        st.markdown("---")
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+    current_page_num = int(meta.get('page', 1))
+    total_pages = int(meta.get('total_pages', 1))
+    current_nome = st.query_params.get("nome", "") or search_query
+    base_query = f"&nome={quote(current_nome.strip())}" if current_nome and current_nome.strip() else ""
+
+    prev_link = f"?page={current_page_num - 1}{base_query}" if current_page_num > 1 else ""
+    next_link = f"?page={current_page_num + 1}{base_query}"
+
+    page_text = (
+        f"Página {current_page_num}"
+        if total_pages <= 1 else f"Página {current_page_num} de {total_pages}"
+    )
+
+    pagination_html = f"""
+<div class='pagination-container' style='margin-top: 14px; padding: 0;'>
+  <div class='pagination-inline'>
+    {('<span class="pagination-btn disabled">◀</span>' if current_page_num <= 1 else f'<a class="pagination-btn" href="{prev_link}">◀</a>')}
+    <div class='pagination-info'>{page_text}</div>
+    <a class='pagination-btn' href='{next_link}'>▶</a>
+  </div>
+</div>
+"""
+    st.markdown(pagination_html, unsafe_allow_html=True)
+    
+    # Seletor rápido de página (apenas se houver muitas páginas)
+    if meta.get('total_pages', 1) > 10:
+        st.markdown('<div class="quick-page-selector">', unsafe_allow_html=True)
+        st.markdown('<div class="page-selector-title">Ir para página específica:</div>', unsafe_allow_html=True)
+        
+        col_a, col_b, col_c = st.columns([1, 1, 1])
+        
+        with col_a:
+            target_page = st.number_input("Página", min_value=1, max_value=meta.get('total_pages', 1), value=meta.get('page', 1), key="target_page")
+        
+        with col_b:
+            if st.button("Ir para página", help="Navegar para a página selecionada", key="go_to_page"):
+                st.query_params["page"] = target_page
+                st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
