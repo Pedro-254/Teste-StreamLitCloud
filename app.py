@@ -1087,6 +1087,8 @@ else:
                 del st.query_params["page"]
             except Exception:
                 pass
+        # Reset página para 1 ao mudar a busca, mantendo em sessão e URL
+        st.session_state["page"] = 1
         st.query_params["page"] = 1
         st.session_state["last_search_query"] = new_query
 
@@ -1095,13 +1097,14 @@ else:
     search_query = q.strip() if q.strip() else st.query_params.get("nome", "")
     # (Sincronização de URL já tratada acima ao detectar mudança de texto)
     
-    # Obtém a página atual da URL
-    current_page = 1
-    url_page = st.query_params.get("page", "1")
-    try:
-        current_page = int(url_page) if url_page.isdigit() else 1
-    except:
-        current_page = 1
+    # Obtém/Inicializa a página atual a partir da sessão (sincronizando com URL uma vez)
+    if "page" not in st.session_state:
+        try:
+            initial_page = st.query_params.get("page", "1")
+            st.session_state["page"] = int(initial_page) if str(initial_page).isdigit() else 1
+        except Exception:
+            st.session_state["page"] = 1
+    current_page = int(st.session_state.get("page", 1))
     
     with st.spinner("Buscando pacientes..."):
         pacientes, meta = fetch_patients(API_URL, search_query, current_page)
@@ -1112,34 +1115,41 @@ else:
     # Cards
     render_cards(pacientes)
 
-    # Controles de navegação entre páginas - sem colunas (evita quebra em telas estreitas)
+    # Controles de navegação entre páginas (sem navegar via link)
     if meta.get('total_pages', 1) > 1:
         st.markdown("---")
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     current_page_num = int(meta.get('page', 1))
     total_pages = int(meta.get('total_pages', 1))
-    current_nome = st.query_params.get("nome", "") or search_query
-    base_query = f"&nome={quote(current_nome.strip())}" if current_nome and current_nome.strip() else ""
-
-    prev_link = f"?page={current_page_num - 1}{base_query}" if current_page_num > 1 else ""
-    next_link = f"?page={current_page_num + 1}{base_query}"
 
     page_text = (
         f"Página {current_page_num}"
         if total_pages <= 1 else f"Página {current_page_num} de {total_pages}"
     )
 
-    pagination_html = f"""
-<div class='pagination-container' style='margin-top: 14px; padding: 0;'>
-  <div class='pagination-inline'>
-    {('<span class="pagination-btn disabled">◀</span>' if current_page_num <= 1 else f'<a class="pagination-btn" href="{prev_link}" target="_self">◀</a>')}
-    <div class='pagination-info'>{page_text}</div>
-    <a class='pagination-btn' href='{next_link}' target="_self">▶</a>
-  </div>
-</div>
-"""
-    st.markdown(pagination_html, unsafe_allow_html=True)
+    if total_pages > 1:
+        col_prev, col_info, col_next = st.columns([1, 2, 1])
+        with col_prev:
+            if st.button("◀", disabled=(current_page_num <= 1), key="prev_page_btn", help="Página anterior"):
+                new_page = max(1, current_page_num - 1)
+                st.session_state["page"] = new_page
+                try:
+                    st.query_params["page"] = new_page
+                except Exception:
+                    pass
+                st.rerun()
+        with col_info:
+            st.markdown(f"<div class='pagination-info'>{page_text}</div>", unsafe_allow_html=True)
+        with col_next:
+            if st.button("▶", disabled=(current_page_num >= total_pages), key="next_page_btn", help="Próxima página"):
+                new_page = min(total_pages, current_page_num + 1)
+                st.session_state["page"] = new_page
+                try:
+                    st.query_params["page"] = new_page
+                except Exception:
+                    pass
+                st.rerun()
     
     # Seletor rápido de página (apenas se houver muitas páginas)
     if meta.get('total_pages', 1) > 10:
@@ -1153,7 +1163,11 @@ else:
         
         with col_b:
             if st.button("Ir para página", help="Navegar para a página selecionada", key="go_to_page"):
-                st.query_params["page"] = target_page
+                st.session_state["page"] = int(target_page)
+                try:
+                    st.query_params["page"] = int(target_page)
+                except Exception:
+                    pass
                 st.rerun()
         
         st.markdown("</div>", unsafe_allow_html=True)
