@@ -1094,34 +1094,27 @@ else:
 
     current_page_num = int(meta.get('page', 1))
     total_pages = int(meta.get('total_pages', 1))
+    current_nome = st.query_params.get("nome", "") or search_query
+    base_query = f"&nome={quote(current_nome.strip())}" if current_nome and current_nome.strip() else ""
+
+    prev_link = f"?page={current_page_num - 1}{base_query}" if current_page_num > 1 else ""
+    next_link = f"?page={current_page_num + 1}{base_query}"
 
     page_text = (
         f"Página {current_page_num}"
         if total_pages <= 1 else f"Página {current_page_num} de {total_pages}"
     )
 
-    # Controles de paginação usando botões do Streamlit (não abrem nova aba)
-    # Aparência similar aos botões originais
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col1:
-        if current_page_num > 1:
-            if st.button("◀", help="Página anterior", key="prev_page"):
-                st.query_params["page"] = current_page_num - 1
-                st.rerun()
-        else:
-            st.button("◀", disabled=True, key="prev_page_disabled")
-    
-    with col2:
-        st.markdown(f"<div class='pagination-info'>{page_text}</div>", unsafe_allow_html=True)
-    
-    with col3:
-        if current_page_num < total_pages:
-            if st.button("▶", help="Próxima página", key="next_page"):
-                st.query_params["page"] = current_page_num + 1
-                st.rerun()
-        else:
-            st.button("▶", disabled=True, key="next_page_disabled")
+    pagination_html = f"""
+<div class='pagination-container' style='margin-top: 14px; padding: 0;'>
+  <div class='pagination-inline'>
+    {('<span class="pagination-btn disabled">◀</span>' if current_page_num <= 1 else f'<a class="pagination-btn" href="{prev_link}" target="_self">◀</a>')}
+    <div class='pagination-info'>{page_text}</div>
+    <a class='pagination-btn' href='{next_link}' target="_self">▶</a>
+  </div>
+</div>
+"""
+    st.markdown(pagination_html, unsafe_allow_html=True)
     
     # Seletor rápido de página (apenas se houver muitas páginas)
     if meta.get('total_pages', 1) > 10:
