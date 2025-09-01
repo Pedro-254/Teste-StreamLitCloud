@@ -9,6 +9,8 @@ import textwrap
 import pandas as pd
 from io import BytesIO
 from datetime import datetime
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # Carrega variáveis do .env
 load_dotenv()
@@ -601,6 +603,23 @@ def normalize(s: str) -> str:
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     return s.lower().strip()
 
+@st.cache_resource(show_spinner=False)
+def get_http_session() -> requests.Session:
+    """Cria uma sessão HTTP reutilizável com pool e retries."""
+    session = requests.Session()
+    retries = Retry(
+        total=3,
+        backoff_factor=0.3,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=frozenset(["GET"]),
+    )
+    adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=retries)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    session.headers.update({"Connection": "keep-alive"})
+    return session
+
+@st.cache_data(show_spinner=False, ttl=180)
 def fetch_patients(api_base_url: str, nome: str, page: int = 1) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Busca pacientes na API: GET {API_URL}/pacientes?nome=<nome>&page=<page>
@@ -634,7 +653,8 @@ def fetch_patients(api_base_url: str, nome: str, page: int = 1) -> Tuple[List[Di
         url = f"{api_base_url}/pacientes"
 
     try:
-        resp = requests.get(url, timeout=15)
+        session = get_http_session()
+        resp = session.get(url, timeout=12)
         resp.raise_for_status()
         data = resp.json()
 
@@ -694,6 +714,7 @@ def fetch_patients(api_base_url: str, nome: str, page: int = 1) -> Tuple[List[Di
 
     return [], {"query": nome, "total": 0, "version": "", "page": page, "total_pages": 1}
 
+@st.cache_data(show_spinner=False)
 def create_excel_download(pacientes: List[Dict[str, Any]]) -> bytes:
     """Cria um arquivo Excel com todos os pacientes para download."""
     if not pacientes:
@@ -737,6 +758,23 @@ def create_excel_download(pacientes: List[Dict[str, Any]]) -> bytes:
     output.seek(0)
     return output.getvalue()
 
+@st.cache_data(show_spinner=False, ttl=600)
+def get_pdf_download_url(api_base_url: str, classe: str) -> str:
+    """Obtém e cacheia a URL de download do PDF para uma classe específica."""
+    if not api_base_url or not classe:
+        return ""
+    try:
+        session = get_http_session()
+        pdf_url = f"{api_base_url}/pdfs/download?arquivo=pdfs/{classe}"
+        pdf_resp = session.get(pdf_url, timeout=12)
+        if pdf_resp.status_code == 200:
+            pdf_data = pdf_resp.json()
+            return pdf_data.get("download_info", {}).get("url", "")
+    except Exception:
+        return ""
+    return ""
+
+@st.cache_data(show_spinner=False, ttl=180)
 def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Busca prontuários na API: GET {API_URL}/pacientes/prontuarios?id=<id>
@@ -765,7 +803,8 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[st
     
     url = f"{api_base_url}/pacientes/prontuarios?id={quote(str(paciente_id))}"
     try:
-        resp = requests.get(url, timeout=15)
+        session = get_http_session()
+        resp = session.get(url, timeout=12)
         resp.raise_for_status()
         data = resp.json()
         
@@ -777,18 +816,9 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[st
             if prontuarios and api_base_url:
                 for prontuario in prontuarios:
                     if prontuario.get("tipo_doc") == "pdf" and prontuario.get("classe"):
-                        try:
-                            # Faz requisição para obter URL do PDF
-                            pdf_url = f"{api_base_url}/pdfs/download?arquivo=pdfs/{prontuario.get('classe')}"
-                            pdf_resp = requests.get(pdf_url, timeout=15)
-                            if pdf_resp.status_code == 200:
-                                pdf_data = pdf_resp.json()
-                                if pdf_data.get("download_info", {}).get("url"):
-                                    # Substitui a classe pela URL real do PDF
-                                    prontuario["pdf_url"] = pdf_data["download_info"]["url"]
-                        except Exception:
-                            # Se falhar ao obter URL do PDF, mantém a classe original
-                            pass
+                        url_pdf = get_pdf_download_url(api_base_url, prontuario.get("classe"))
+                        if url_pdf:
+                            prontuario["pdf_url"] = url_pdf
             
             return prontuarios, paciente_info
         else:
@@ -806,6 +836,7 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[st
     
     return [], {}
 
+@st.cache_data(show_spinner=False, ttl=180)
 def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
     """Busca um paciente específico em {API_URL}/pacientes/<id> (se existir)."""
     if not paciente_id:
@@ -829,7 +860,8 @@ def fetch_patient_by_id(api_base_url: str, paciente_id: Any) -> Dict[str, Any]:
     # Novo formato: busca via /pacientes?id=<id>, que retorna lista de itens
     url = f"{api_base_url}/pacientes?id={quote(str(paciente_id))}"
     try:
-        resp = requests.get(url, timeout=15)
+        session = get_http_session()
+        resp = session.get(url, timeout=12)
         resp.raise_for_status()
         data = resp.json()
 
@@ -904,6 +936,29 @@ def get_selected_paciente_id() -> Any:
     return selected_id
 
 
+def handle_search_change():
+    """Callback para mudança no input de busca: sincroniza URL, limpa id e reinicia paginação."""
+    new_query = (st.session_state.get("search_q", "") or "").strip()
+    # Atualiza/remover nome
+    if new_query:
+        st.query_params["nome"] = new_query
+    else:
+        try:
+            del st.query_params["nome"]
+        except Exception:
+            pass
+        try:
+            del st.query_params["page"]
+        except Exception:
+            pass
+    # Garante que nenhum paciente fique selecionado
+    try:
+        del st.query_params["id"]
+    except Exception:
+        pass
+    st.query_params["page"] = 1
+    st.session_state["last_search_query"] = new_query
+
 def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, Any]], paciente_api: Dict[str, Any] = None):
     """Renderiza detalhe do paciente com prontuários abaixo, ocupando a página."""
     col1, col2 = st.columns([1, 1], gap="large")
@@ -912,13 +967,6 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
             try:
                 # Limpa todos os parâmetros da URL para garantir estado limpo
                 st.query_params.clear()
-                # Força limpeza completa do cache da sessão
-                for key in list(st.session_state.keys()):
-                    if 'cache' in key.lower() or 'paciente' in key.lower() or 'prontuario' in key.lower():
-                        del st.session_state[key]
-                # Força limpeza do cache do Streamlit
-                st.cache_data.clear()
-                st.cache_resource.clear()
             except Exception:
                 pass
             st.rerun()
@@ -1027,7 +1075,7 @@ def render_cards(pacientes: List[Dict[str, Any]]):
         email = p.get("email", "")
         html_parts.append(textwrap.dedent(f"""
 <div class="card">
-  <a class="overlay-link" href="./?id={p.get('id')}" target="_self" rel="noopener"></a>
+  <a class="overlay-link" href="./?id={p.get('id')}" target="_self" rel="noopener" tabindex="-1" aria-hidden="true"></a>
   <h3>{nome}</h3>
   <div class="row"><span class="label">Telefone:</span> {tel}</div>
   <div class="row"><span class="label">E-mail:</span> {email}</div>
@@ -1045,18 +1093,10 @@ st.title("Pacientes Dra. Carolina Adorno")
 # Verifica se há um paciente selecionado via ?id=
 selected_id = get_selected_paciente_id()
 
-# Limpa cache quando não há paciente selecionado para evitar dados residuais
+# Evita limpeza agressiva de cache quando não há paciente selecionado
 if not selected_id:
-    # Limpa qualquer cache residual da sessão
-    for key in list(st.session_state.keys()):
-        if 'cache' in key.lower() or 'paciente' in key.lower() or 'prontuario' in key.lower():
-            del st.session_state[key]
-    # Limpa cache do Streamlit para garantir estado limpo
-    try:
-        st.cache_data.clear()
-        st.cache_resource.clear()
-    except Exception:
-        pass
+    # Mantemos o cache para acelerar navegação; nenhuma limpeza aqui
+    pass
 
 if selected_id:
     try:
@@ -1071,7 +1111,8 @@ if selected_id:
 
     if paciente:
         with st.spinner("Carregando dados do paciente..."):
-            prontuarios, paciente_api = fetch_prontuarios(API_URL, paciente.get("id"))
+            # Usa o ID original da URL, não o ID retornado pela API
+            prontuarios, paciente_api = fetch_prontuarios(API_URL, selected_id_int)
         render_patient_detail(paciente, prontuarios, paciente_api)
     else:
         st.warning("Paciente não encontrado.")
@@ -1081,6 +1122,11 @@ else:
         del st.session_state['paciente_cache']
     if 'prontuarios_cache' in st.session_state:
         del st.session_state['prontuarios_cache']
+    # Garante que nenhum paciente fique selecionado ao voltar para a lista
+    try:
+        del st.query_params["id"]
+    except Exception:
+        pass
     
     # Barra de busca (sem botões)
     st.markdown("<div style='color: #000000; font-weight: 500;'>Pesquisar por nome</div>", unsafe_allow_html=True)
@@ -1088,7 +1134,7 @@ else:
     if "search_q" not in st.session_state:
         st.session_state["search_q"] = default_nome
     # Renderiza input sem forçar value em cada rerun
-    q = st.text_input("", placeholder="Digite o nome do paciente... (ex.: Maria)", label_visibility="collapsed", key="search_q")
+    q = st.text_input("", placeholder="Digite o nome do paciente... (ex.: Maria)", label_visibility="collapsed", key="search_q", on_change=handle_search_change)
     # Inicializa referência anterior se necessário
     if "last_search_query" not in st.session_state:
         st.session_state["last_search_query"] = (st.session_state.get("search_q", "") or "").strip()
@@ -1107,6 +1153,11 @@ else:
                 del st.query_params["page"]
             except Exception:
                 pass
+        # Remove qualquer id ativo ao alterar a busca para evitar reabrir prontuário
+        try:
+            del st.query_params["id"]
+        except Exception:
+            pass
         st.query_params["page"] = 1
         st.session_state["last_search_query"] = new_query
 
