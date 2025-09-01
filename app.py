@@ -1048,11 +1048,13 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
   <div class="row"><span class="label">Histórico:</span> <div style="margin-top: 5px; line-height: 1.4;">{historico}</div></div>
 """
             
-            # Adiciona link para PDF se for um documento PDF
+            # Adiciona link para PDF se for um documento PDF; caso contrário, informa indisponibilidade
             if tipo_doc == "pdf" and classe:
-                # Usa a URL do PDF se disponível, senão usa a classe original
-                pdf_link = prontuario.get("pdf_url", classe)
-                card_html += f'<div class="row"><span class="label">Documento:</span> <a href="{pdf_link}" target="_blank" rel="noopener">📄 Visualizar PDF</a></div>'
+                pdf_link = prontuario.get("pdf_url", "")
+                if pdf_link:
+                    card_html += f'<div class="row"><span class="label">Documento:</span> <a href="{pdf_link}" target="_blank" rel="noopener">📄 Visualizar PDF</a></div>'
+                else:
+                    card_html += '<div class="row"><span class="label">Documento:</span> <span class="empty">PDF não disponível</span></div>'
             
             card_html += "</div>"
             html_parts.append(card_html)
