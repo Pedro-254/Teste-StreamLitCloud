@@ -772,6 +772,24 @@ def fetch_prontuarios(api_base_url: str, paciente_id: Any) -> Tuple[List[Dict[st
         if isinstance(data, dict):
             prontuarios = data.get("prontuarios", [])
             paciente_info = data.get("paciente", {})
+            
+            # Processa cada prontuário para obter URLs dos PDFs
+            if prontuarios and api_base_url:
+                for prontuario in prontuarios:
+                    if prontuario.get("tipo_doc") == "pdf" and prontuario.get("classe"):
+                        try:
+                            # Faz requisição para obter URL do PDF
+                            pdf_url = f"{api_base_url}/pdfs/download?arquivo=pdfs/{prontuario.get('classe')}"
+                            pdf_resp = requests.get(pdf_url, timeout=15)
+                            if pdf_resp.status_code == 200:
+                                pdf_data = pdf_resp.json()
+                                if pdf_data.get("download_info", {}).get("url"):
+                                    # Substitui a classe pela URL real do PDF
+                                    prontuario["pdf_url"] = pdf_data["download_info"]["url"]
+                        except Exception:
+                            # Se falhar ao obter URL do PDF, mantém a classe original
+                            pass
+            
             return prontuarios, paciente_info
         else:
             return [], {}
@@ -984,7 +1002,9 @@ def render_patient_detail(paciente: Dict[str, Any], prontuarios: List[Dict[str, 
             
             # Adiciona link para PDF se for um documento PDF
             if tipo_doc == "pdf" and classe:
-                card_html += f'<div class="row"><span class="label">Documento:</span> <a href="{classe}" target="_blank" rel="noopener">📄 Visualizar PDF</a></div>'
+                # Usa a URL do PDF se disponível, senão usa a classe original
+                pdf_link = prontuario.get("pdf_url", classe)
+                card_html += f'<div class="row"><span class="label">Documento:</span> <a href="{pdf_link}" target="_blank" rel="noopener">📄 Visualizar PDF</a></div>'
             
             card_html += "</div>"
             html_parts.append(card_html)
