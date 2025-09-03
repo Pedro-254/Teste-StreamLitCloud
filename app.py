@@ -765,7 +765,9 @@ def get_pdf_download_url(api_base_url: str, classe: str) -> str:
         return ""
     try:
         session = get_http_session()
-        pdf_url = f"{api_base_url}/pdfs/download?arquivo=pdfs/{classe}"
+        # Remove protocolo indesejado caso a classe venha no formato "@http://...pdf"
+        clean_classe = classe.replace("http://", "")
+        pdf_url = f"{api_base_url}/pdfs/download?arquivo=pdfs/{clean_classe}"
         pdf_resp = session.get(pdf_url, timeout=12)
         if pdf_resp.status_code == 200:
             pdf_data = pdf_resp.json()
